@@ -14,3 +14,7 @@ cache/
 .codegraph/
 .cursor/
 
+# Test coverage
+.coverage
+
+
