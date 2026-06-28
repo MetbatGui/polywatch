@@ -12,9 +12,13 @@ class WalletClassifier:
         if 0.45 <= p.bias_up <= 0.55 and p.total_trades > 100 and p.win_rate >= 0.35:
             return Classification.AMM_BOT
 
-        # arbitrager: 베테랑(>=90일) + 극단적 승률 + 소수 마켓
+        # arbitrager: 베테랑 + 극단적 승률 + 소수 마켓 집중
         if p.win_rate > 0.85 and p.n_markets <= 5 and p.total_trades < 20:
             return Classification.ARBITRAGER
+
+        # expert: 베테랑(>=90일) + 꾸준한 고승률 + 다양한 마켓
+        if p.age_days >= 90 and p.win_rate > 0.60 and p.n_markets > 5 and p.total_trades >= 20:
+            return Classification.EXPERT
 
         # gambler: 저승률 + 고빈도 + 손실
         if p.win_rate < 0.2 and p.total_trades > 100 and p.total_pnl < -10_000:

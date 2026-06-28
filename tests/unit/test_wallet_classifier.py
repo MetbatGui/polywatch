@@ -38,6 +38,28 @@ def test_classify_insider_boundary_markets():
     assert classify(_profile(age_days=30, n_markets=4, total_trades=3)) != Classification.INSIDER
 
 
+# ── EXPERT: 베테랑 + 꾸준한 고승률 + 다양한 마켓 ─────────────────────────
+
+def test_classify_expert():
+    """베테랑(>=90일) + win_rate>0.60 + n_markets>5 + total_trades>=20 → EXPERT"""
+    p = _profile(age_days=180, win_rate=0.65, n_markets=8, total_trades=30)
+    assert WalletClassifier.classify(p) == Classification.EXPERT
+
+
+def test_expert_boundary_age():
+    """89일 계정 = EXPERT 아님"""
+    p = _profile(age_days=89, win_rate=0.65, n_markets=8, total_trades=30)
+    assert WalletClassifier.classify(p) != Classification.EXPERT
+
+
+def test_expert_not_confused_with_arbitrager():
+    """극단적 승률(>85%)은 ARBITRAGER, 보통 고승률은 EXPERT"""
+    arb = _profile(age_days=200, win_rate=0.90, n_markets=3, total_trades=8)
+    exp = _profile(age_days=200, win_rate=0.68, n_markets=10, total_trades=40)
+    assert WalletClassifier.classify(arb) == Classification.ARBITRAGER
+    assert WalletClassifier.classify(exp) == Classification.EXPERT
+
+
 # ── ARBITRAGER: 고승률 베테랑, 소수 마켓 집중 ─────────────────────────────
 
 def test_classify_arbitrager():

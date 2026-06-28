@@ -11,6 +11,7 @@ _TOP_N = 3
 
 _LABEL_EMOJI = {
     "INSIDER":    "🎯",
+    "EXPERT":     "🧠",
     "UNKNOWN":    "❓",
     "GAMBLER":    "🎲",
     "AMM_BOT":    "🤖",

@@ -4,6 +4,7 @@ from enum import Enum, auto
 
 class Classification(Enum):
     INSIDER = auto()
+    EXPERT = auto()
     AMM_BOT = auto()
     ARBITRAGER = auto()
     GAMBLER = auto()
