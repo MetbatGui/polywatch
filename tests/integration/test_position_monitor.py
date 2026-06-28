@@ -54,7 +54,7 @@ class FakeWalletRepo:
     def get(self, address: str) -> WalletProfile | None:
         return self._wallets.get(address)
 
-    def save(self, wallet: WalletProfile) -> None:
+    def save(self, wallet: WalletProfile, address: str) -> None:
         pass
 
 

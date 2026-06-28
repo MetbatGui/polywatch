@@ -33,7 +33,7 @@ class _FakeWalletRepo:
     def get(self, address: str):
         return None
 
-    def save(self, wallet) -> None:
+    def save(self, wallet, address: str) -> None:
         pass
 
 
