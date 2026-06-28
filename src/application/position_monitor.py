@@ -72,22 +72,24 @@ class PositionMonitor:
             return True
         return sig.current_value >= self._whale_min_usd
 
-    def _classify_wallet(self, address: str) -> Classification:
+    def _resolve_wallet(self, address: str) -> tuple[Classification, int]:
+        """Returns (classification, active_bets_count)."""
         profile = self._wallets.get(address)
         if profile is None:
             history = self._poly.fetch_wallet_history(address)
             profile = WalletProfiler.from_history(history)
             self._wallets.save(profile, address)
-        return WalletClassifier.classify(profile)
+        return WalletClassifier.classify(profile), profile.n_markets
 
-    def _created_date(self, address: str) -> str:
+    def _age_days(self, address: str) -> str:
         if address not in self._created_cache:
             ts = self._poly.fetch_wallet_created_at(address)
             self._created_cache[address] = ts
         ts = self._created_cache[address]
         if not ts:
             return "?"
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+        days = (datetime.now(tz=timezone.utc) - datetime.fromtimestamp(ts, tz=timezone.utc)).days
+        return f"{days}일"
 
     def _build_market_message(
         self,
@@ -114,17 +116,17 @@ class PositionMonitor:
         if not pos_signals:
             return ""
 
-        labeled: list[tuple[Signal, Classification]] = []
+        labeled: list[tuple[Signal, Classification, int]] = []
         for sig in pos_signals:
-            label = self._classify_wallet(sig.wallet)
+            label, n_bets = self._resolve_wallet(sig.wallet)
             if self._is_notable(sig, label):
-                labeled.append((sig, label))
+                labeled.append((sig, label, n_bets))
 
         top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
         if not top:
             return ""
 
-        has_insider = any(lbl == Classification.INSIDER for _, lbl in top)
+        has_insider = any(lbl == Classification.INSIDER for _, lbl, _ in top)
         header_icon = "🚨" if has_insider else "📊"
         sig_type = pos_signals[0].type.name.replace("_", " ")
 
@@ -136,16 +138,17 @@ class PositionMonitor:
         ]
 
         rank_emoji = ["1️⃣", "2️⃣", "3️⃣"]
-        for i, (sig, label) in enumerate(top):
+        for i, (sig, label, n_bets) in enumerate(top):
             pos = curr_positions.get(sig.wallet)
             name = (pos.name or sig.wallet[:14]) if pos else sig.wallet[:14]
             share = (sig.current_value / total_value * 100) if total_value else 0
-            created = self._created_date(sig.wallet)
+            age = self._age_days(sig.wallet)
             tag = _LABEL_EMOJI.get(label.name, "❓")
             outcome_icon = "🟢" if sig.outcome == "Yes" else "🔴"
             lines += [
                 f"{rank_emoji[i]} {tag} <b>{name}</b>  {outcome_icon} {sig.outcome}",
-                f"   💵 <b>${sig.current_value:,.0f}</b>  ·  {share:.0f}%  ·  📅 {created}",
+                f"   💵 <b>${sig.current_value:,.0f}</b>  ·  {share:.0f}%"
+                f"  ·  🎰 {n_bets}건  ·  👤 {age}",
                 "",
             ]
 
