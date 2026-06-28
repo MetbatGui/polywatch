@@ -5,7 +5,8 @@ class WalletClassifier:
     @staticmethod
     def classify(p: WalletProfile) -> Classification:
         # 유효하지 않은 데이터 예외 처리 (격리)
-        if p.age_days < 0 or not (0.0 <= p.win_rate <= 1.0) or p.total_trades < 0 or p.n_markets < 0:
+        if (p.age_days < 0 or not (0.0 <= p.win_rate <= 1.0)
+                or p.total_trades < 0 or p.n_markets < 0):
             return Classification.UNKNOWN
 
         # insider: 신규 계정(<90일) + 집중 베팅 — 나이 먼저 체크

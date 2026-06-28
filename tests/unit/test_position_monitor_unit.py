@@ -1,10 +1,11 @@
 """PositionMonitor 세부 비즈니스 로직 단위 테스트"""
-import pytest
 from src.application.position_monitor import PositionMonitor
 from src.domain.signal_detector import Position
-from src.domain.wallet import WalletProfile, Classification
 from tests.integration.test_position_monitor import (
-    FakePolymarketPort, FakeAlertPort, FakeMarketRepo, FakeWalletRepo
+    FakeAlertPort,
+    FakeMarketRepo,
+    FakePolymarketPort,
+    FakeWalletRepo,
 )
 
 
@@ -49,7 +50,7 @@ def test_wallet_api_error_isolation():
 
 
 def test_top_n_sort_limit():
-    """동시에 다수 지갑 진입 시 _TOP_N=3 에 따라 가치가 높은 순으로 정렬되고 3개로 제한되는지 검증"""
+    """다수 지갑 진입 시 _TOP_N=3 에 맞춰 가치 정렬 및 제한 검증"""
     poly = FakePolymarketPort()
     alert = FakeAlertPort()
     market_repo = FakeMarketRepo()

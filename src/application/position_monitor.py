@@ -1,8 +1,6 @@
 import dataclasses
-from datetime import datetime, timezone
 import logging
-
-log = logging.getLogger(__name__)
+from datetime import datetime, timezone
 
 from src.application.message_formatter import MessageFormatter, WalletEntry
 from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
@@ -10,6 +8,8 @@ from src.domain.signal_detector import Signal, SignalConfig, SignalDetector, Sig
 from src.domain.wallet import Classification, WalletProfile
 from src.domain.wallet_classifier import WalletClassifier
 from src.domain.wallet_profiler import WalletProfiler
+
+log = logging.getLogger(__name__)
 
 _TOP_N = 3
 
