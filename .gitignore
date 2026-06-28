@@ -1,0 +1,12 @@
+﻿.env
+*.pkl
+*.db
+*.log
+__pycache__/
+.python-version
+*.pyc
+market_cache.json
+market_results.json
+macro_markets.json
+macro_top.json
+insider_suspects.pkl
