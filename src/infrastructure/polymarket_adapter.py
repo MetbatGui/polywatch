@@ -33,8 +33,19 @@ class PolymarketAdapter:
                     outcome=pos.get("outcome", ""),
                     avg_price=float(pos.get("avgPrice", 0)),
                     current_value=float(pos.get("currentValue", 0)),
+                    name=pos.get("name", ""),
                 ))
         return positions
+
+    def fetch_wallet_created_at(self, address: str) -> int:
+        resp = requests.get(
+            f"{_DATA}/v1/activity",
+            params={"user": address, "limit": 1, "sortBy": "TIMESTAMP", "sortDirection": "ASC"},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return int(data[0]["timestamp"]) if data else 0
 
     def fetch_wallet_history(self, address: str) -> list[dict]:
         resp = requests.get(

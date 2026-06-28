@@ -23,6 +23,9 @@ class FakePolymarketPort:
     def fetch_wallet_history(self, address: str) -> list[dict]:
         return list(self._wallet_history.get(address, []))
 
+    def fetch_wallet_created_at(self, address: str) -> int:
+        return 0
+
 
 class FakeAlertPort:
     def __init__(self):
@@ -162,7 +165,7 @@ def test_unknown_wallet_large_position_triggers_alert_in_explore_mode(alert_port
     monitor.run_once()
 
     assert len(alert_port.sent) == 1
-    assert wallet_addr in alert_port.sent[0]
+    assert wallet_addr[:10] in alert_port.sent[0]  # name fallback truncates to 10 chars
     assert "UNKNOWN" in alert_port.sent[0]
 
 

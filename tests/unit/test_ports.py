@@ -12,6 +12,9 @@ class _FakePolymarket:
     def fetch_wallet_history(self, address: str) -> list:
         return []
 
+    def fetch_wallet_created_at(self, address: str) -> int:
+        return 0
+
 
 class _FakeAlert:
     def send(self, message: str) -> None:

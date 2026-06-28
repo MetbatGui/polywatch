@@ -14,6 +14,7 @@ class Position:
     outcome: str
     avg_price: float
     current_value: float
+    name: str = ""
 
 
 @dataclass(frozen=True)

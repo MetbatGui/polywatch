@@ -41,7 +41,7 @@ def test_fetch_positions_maps_to_position_objects(mocker):
     _mock_get(mocker, [
         {"positions": [
             {"proxyWallet": "0xwallet", "outcome": "Yes",
-             "avgPrice": 0.42, "currentValue": 2500.0},
+             "avgPrice": 0.42, "currentValue": 2500.0, "name": "Trader1"},
         ]}
     ])
     from src.domain.signal_detector import Position
@@ -53,6 +53,7 @@ def test_fetch_positions_maps_to_position_objects(mocker):
     assert p.outcome == "Yes"
     assert p.avg_price == pytest.approx(0.42)
     assert p.current_value == pytest.approx(2500.0)
+    assert p.name == "Trader1"
 
 
 def test_fetch_positions_empty_response(mocker):
