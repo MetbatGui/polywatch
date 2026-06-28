@@ -9,7 +9,8 @@ class TelegramAdapter:
     def send(self, message: str) -> None:
         resp = requests.post(
             self._url,
-            json={"chat_id": self._chat_id, "text": message},
+            json={"chat_id": self._chat_id, "text": message,
+                  "parse_mode": "HTML", "disable_web_page_preview": True},
             timeout=10,
         )
         resp.raise_for_status()

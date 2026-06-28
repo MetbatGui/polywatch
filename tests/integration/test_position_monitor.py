@@ -131,7 +131,7 @@ def test_price_spike_triggers_alert(alert_port):
     monitor.run_once()
 
     assert len(alert_port.sent) == 1
-    assert "PRICE_SPIKE" in alert_port.sent[0]
+    assert "PRICE SPIKE" in alert_port.sent[0]
 
 
 def test_new_macro_market_added_to_watchlist():
@@ -165,8 +165,8 @@ def test_unknown_wallet_large_position_triggers_alert_in_explore_mode(alert_port
     monitor.run_once()
 
     assert len(alert_port.sent) == 1
-    assert wallet_addr[:10] in alert_port.sent[0]  # name fallback truncates to 10 chars
-    assert "UNKNOWN" in alert_port.sent[0]
+    assert wallet_addr[:10] in alert_port.sent[0]  # name fallback truncates to 12 chars
+    assert "❓" in alert_port.sent[0]  # UNKNOWN emoji
 
 
 def test_expired_market_removed_from_watchlist():

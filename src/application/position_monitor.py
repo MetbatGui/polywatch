@@ -8,6 +8,14 @@ from src.domain.wallet_profiler import WalletProfiler
 
 _TOP_N = 3
 
+_LABEL_EMOJI = {
+    "INSIDER":    "🎯",
+    "UNKNOWN":    "❓",
+    "GAMBLER":    "🎲",
+    "AMM_BOT":    "🤖",
+    "ARBITRAGER": "⚡",
+}
+
 
 class PositionMonitor:
     def __init__(
@@ -81,41 +89,50 @@ class PositionMonitor:
         curr_positions: dict,
         total_value: float,
     ) -> str:
-        lines: list[str] = [
-            f"[{market['question']}]",
-            f"yes={yes_price:.3f}",
-        ]
-
         price_spikes = [s for s in signals if s.type == SignalType.PRICE_SPIKE]
         pos_signals = [s for s in signals if s.type != SignalType.PRICE_SPIKE]
 
+        question = market["question"]
+        parts: list[str] = []
+
+        # header
         if price_spikes:
-            lines.append(f"PRICE_SPIKE → yes={price_spikes[0].yes_price:.3f}")
+            parts.append(f"⚡ <b>PRICE SPIKE</b>\n📍 {question}\n💹 yes → <b>{yes_price:.3f}</b>")
+        else:
+            signal_type = pos_signals[0].type.name if pos_signals else ""
+            icon = "🎯" if any(
+                self._classify_wallet(s.wallet) == Classification.INSIDER
+                for s in pos_signals[:1]
+            ) else "📊"
+            parts.append(f"{icon} <b>{question}</b>\n💲 yes = <b>{yes_price:.3f}</b>")
+            if signal_type:
+                parts.append(f"📌 {signal_type}")
 
         if pos_signals:
-            # label + filter
             labeled: list[tuple[Signal, Classification]] = []
             for sig in pos_signals:
                 label = self._classify_wallet(sig.wallet)
                 if label == Classification.INSIDER or self._explore:
                     labeled.append((sig, label))
 
-            # top N by value
             top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
 
             if top:
-                lines.append(f"\n상위 {len(top)}개 포지션:")
-                for sig, label in top:
+                # monospace table
+                rows = ["순위  유저              방향  금액          비중  가입"]
+                rows.append("─" * 58)
+                for i, (sig, label) in enumerate(top, 1):
                     pos = curr_positions.get(sig.wallet)
-                    display_name = (pos.name or sig.wallet[:10]) if pos else sig.wallet[:10]
+                    name = (pos.name or sig.wallet[:12]) if pos else sig.wallet[:12]
                     share = (sig.current_value / total_value * 100) if total_value else 0
                     created = self._created_date(sig.wallet)
-                    lines.append(
-                        f"  [{label.name}] {display_name}"
-                        f"  {sig.outcome}  ${sig.current_value:,.0f} ({share:.0f}%)"
-                        f"  가입 {created}"
+                    emoji = _LABEL_EMOJI.get(label.name, "❓")
+                    rows.append(
+                        f"{emoji}{i}  {name:<16}  {sig.outcome:<3}  "
+                        f"${sig.current_value:>10,.0f}  {share:>3.0f}%  {created}"
                     )
+                parts.append("<pre>" + "\n".join(rows) + "</pre>")
 
-        if len(lines) > 2:
-            return "\n".join(lines)
+        if parts:
+            return "\n".join(parts)
         return ""
