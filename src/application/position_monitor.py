@@ -1,5 +1,8 @@
 import dataclasses
 from datetime import datetime, timezone
+import logging
+
+log = logging.getLogger(__name__)
 
 from src.application.message_formatter import MessageFormatter, WalletEntry
 from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
@@ -77,11 +80,16 @@ class PositionMonitor:
     def _resolve_wallet(self, address: str) -> tuple[Classification, WalletProfile]:
         profile = self._wallets.get(address)
         if profile is None:
-            history = self._poly.fetch_wallet_history(address)
-            profile = WalletProfiler.from_history(history)
-            age = self._fetch_age_days(address)
-            profile = dataclasses.replace(profile, age_days=age)
-            self._wallets.save(profile, address)
+            try:
+                history = self._poly.fetch_wallet_history(address)
+                profile = WalletProfiler.from_history(history)
+                age = self._fetch_age_days(address)
+                profile = dataclasses.replace(profile, age_days=age)
+                self._wallets.save(profile, address)
+            except Exception as exc:
+                log.error("Failed to resolve wallet %s, using fallback profile: %s", address, exc)
+                profile = WalletProfile(win_rate=0.5, n_markets=0, total_pnl=0.0,
+                                         age_days=0, bias_up=0.5, total_trades=0)
         return WalletClassifier.classify(profile), profile
 
     def _fetch_age_days(self, address: str) -> int:

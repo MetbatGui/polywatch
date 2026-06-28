@@ -44,7 +44,8 @@ def test_wallet_api_error_isolation():
     # 하지만 현재 코드는 예외를 캐치하지 않으므로 크래시나 에러가 전파됨.
     assert len(alert.sent) == 1
     assert "0xwallet_ok" in alert.sent[0]
-    assert "0xwallet_error" not in alert.sent[0]
+    # 에러가 발생한 지갑도 폴백 프로필로 처리되어 알림에 포함되어야 함
+    assert "0xwallet_error" in alert.sent[0]
 
 
 def test_top_n_sort_limit():
