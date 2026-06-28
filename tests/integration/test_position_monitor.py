@@ -1,9 +1,9 @@
 """통합 테스트: 포지션 스냅샷 → 시그널 감지 → 알림 발송"""
 import pytest
 
+from src.application.market_scan import MarketScanService
 from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
 from src.application.position_monitor import PositionMonitor
-from src.application.market_scan import MarketScanService
 from src.domain.signal_detector import Position, SignalConfig
 from src.domain.wallet import WalletProfile
 
@@ -68,8 +68,8 @@ assert isinstance(FakeWalletRepo(), WalletRepo)
 
 
 _INSIDER_PROFILE = WalletProfile(
-    win_rate=0.72, n_markets=4, total_pnl=25_000.0,
-    age_days=10, bias_up=0.6, total_trades=50,
+    win_rate=0.67, n_markets=2, total_pnl=25_000.0,
+    age_days=10, bias_up=0.67, total_trades=3,
 )
 _MACRO_MARKET = {"id": "mkt1", "question": "Will Trump win the 2024 election?", "yes_price": 0.45}
 

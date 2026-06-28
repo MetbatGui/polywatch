@@ -49,13 +49,15 @@ def test_win_rate_from_cash_pnl():
 
 
 def test_insider_profile_classified():
+    """신규 계정 시뮬레이션: age_days=0, n_markets<=3, total_trades<=5 → INSIDER"""
     from src.domain.wallet import Classification
     from src.domain.wallet_classifier import WalletClassifier
 
-    positions = (
-        [_pos(outcome="Yes", market=f"m{i}", cash_pnl=2000.0) for i in range(5)]
-        + [_pos(outcome="Yes", market=f"m{i+5}", cash_pnl=-100.0) for i in range(2)]
-    )
+    positions = [
+        _pos(outcome="Yes", market="m1", cash_pnl=15_000.0),
+        _pos(outcome="Yes", market="m2", cash_pnl=8_000.0),
+        _pos(outcome="No", market="m3", cash_pnl=-500.0),
+    ]
     p = WalletProfiler.from_history(positions)
-    # win_rate=5/7≈0.71, n_markets=7, total_pnl=9800
+    # age_days=0 < 90, n_markets=3, total_trades=3 → INSIDER
     assert WalletClassifier.classify(p) == Classification.INSIDER

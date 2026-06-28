@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import datetime, timezone
 
 from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
@@ -78,18 +79,23 @@ class PositionMonitor:
         if profile is None:
             history = self._poly.fetch_wallet_history(address)
             profile = WalletProfiler.from_history(history)
+            age = self._fetch_age_days(address)
+            profile = dataclasses.replace(profile, age_days=age)
             self._wallets.save(profile, address)
         return WalletClassifier.classify(profile), profile.n_markets
 
-    def _age_days(self, address: str) -> str:
+    def _fetch_age_days(self, address: str) -> int:
         if address not in self._created_cache:
             ts = self._poly.fetch_wallet_created_at(address)
             self._created_cache[address] = ts
         ts = self._created_cache[address]
         if not ts:
-            return "?"
-        days = (datetime.now(tz=timezone.utc) - datetime.fromtimestamp(ts, tz=timezone.utc)).days
-        return f"{days}일"
+            return 9999
+        return (datetime.now(tz=timezone.utc) - datetime.fromtimestamp(ts, tz=timezone.utc)).days
+
+    def _age_days(self, address: str) -> str:
+        days = self._fetch_age_days(address)
+        return "?" if days == 9999 else f"{days}일"
 
     def _build_market_message(
         self,
