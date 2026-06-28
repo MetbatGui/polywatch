@@ -17,7 +17,10 @@ def test_sqlite_integration_flow():
     market_repo.init_schema()
     wallet_repo.init_schema()
 
+    import time
     poly = FakePolymarketPort()
+    # 10일 전 타임스탬프를 반환하도록 모킹하여 age_days=10 조건으로 INSIDER 분류를 받도록 함
+    poly.fetch_wallet_created_at = lambda addr: int(time.time()) - 10 * 86400
     alert = FakeAlertPort()
 
     # 2. 신규 마켓 추가 시나리오
@@ -51,5 +54,6 @@ def test_sqlite_integration_flow():
 
     monitor.run_once()
 
-    # 의도적 실패 유도 (Red state): 알림이 전혀 발송되지 않았다고 가정하거나 999개 발생했다고 기재
-    assert len(alert.sent) == 999
+    # 정상 검증 (Green state): 텔레그램 알림 1건 발송 검증
+    assert len(alert.sent) == 1
+    assert "0xreal_user" in alert.sent[0]
