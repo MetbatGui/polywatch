@@ -38,8 +38,8 @@ class PolymarketAdapter:
 
     def fetch_wallet_history(self, address: str) -> list[dict]:
         resp = requests.get(
-            f"{_DATA}/v1/activity",
-            params={"user": address, "limit": 500},
+            f"{_DATA}/v1/positions",
+            params={"user": address, "sizeThreshold": "0.01", "limit": 500},
             timeout=10,
         )
         resp.raise_for_status()
