@@ -53,18 +53,18 @@ def test_expert_boundary_age():
 
 
 def test_expert_not_confused_with_arbitrager():
-    """극단적 승률(>85%)은 ARBITRAGER, 보통 고승률은 EXPERT"""
-    arb = _profile(age_days=200, win_rate=0.90, n_markets=3, total_trades=8)
+    """극단적 승률 + 균형 bias = ARBITRAGER, 보통 고승률 = EXPERT"""
+    arb = _profile(age_days=200, win_rate=0.90, total_trades=40, bias_up=0.50)
     exp = _profile(age_days=200, win_rate=0.68, n_markets=10, total_trades=40)
     assert WalletClassifier.classify(arb) == Classification.ARBITRAGER
     assert WalletClassifier.classify(exp) == Classification.EXPERT
 
 
-# ── ARBITRAGER: 고승률 베테랑, 소수 마켓 집중 ─────────────────────────────
+# ── ARBITRAGER: 극단적 승률 + 고빈도 + 균형 bias ─────────────────────────
 
 def test_classify_arbitrager():
-    """베테랑(>=90일) + 극단적 승률(>85%) + 소수 마켓"""
-    p = _profile(age_days=200, win_rate=0.9, n_markets=2, total_trades=8)
+    """극단적 승률(>85%) + 고빈도(>=20) + 균형 bias → ARBITRAGER"""
+    p = _profile(win_rate=0.9, total_trades=50, bias_up=0.50)
     assert WalletClassifier.classify(p) == Classification.ARBITRAGER
 
 
@@ -72,6 +72,20 @@ def test_arbitrager_not_confused_with_insider():
     """신규 계정은 승률 높아도 INSIDER 우선"""
     p = _profile(age_days=30, win_rate=0.95, n_markets=1, total_trades=2)
     assert WalletClassifier.classify(p) == Classification.INSIDER
+
+
+def test_arbitrager_not_amm_bot():
+    """승률 낮은 균형 bot은 AMM_BOT, 극단적 승률은 ARBITRAGER"""
+    bot = _profile(win_rate=0.40, total_trades=150, bias_up=0.50)
+    arb = _profile(win_rate=0.90, total_trades=50, bias_up=0.50)
+    assert WalletClassifier.classify(bot) == Classification.AMM_BOT
+    assert WalletClassifier.classify(arb) == Classification.ARBITRAGER
+
+
+def test_arbitrager_requires_frequent_trades():
+    """고승률이라도 거래 적으면 ARBITRAGER 아님"""
+    p = _profile(win_rate=0.90, total_trades=10, bias_up=0.50)
+    assert WalletClassifier.classify(p) != Classification.ARBITRAGER
 
 
 # ── AMM_BOT ────────────────────────────────────────────────────────────────
