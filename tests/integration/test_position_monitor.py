@@ -1,13 +1,20 @@
 """통합 테스트: 포지션 스냅샷 → 시그널 감지 → 알림 발송"""
 import pytest
 
+from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
+from src.domain.signal_detector import Position
+from src.domain.wallet import WalletProfile
+
 
 class FakePolymarketPort:
-    def fetch_positions(self, market_id: str):
-        raise NotImplementedError
+    def fetch_active_markets(self) -> list[dict]:
+        return []
 
-    def fetch_wallet_profile(self, address: str):
-        raise NotImplementedError
+    def fetch_positions(self, market_id: str) -> list[Position]:
+        return []
+
+    def fetch_wallet_history(self, address: str) -> list[dict]:
+        return []
 
 
 class FakeAlertPort:
@@ -19,16 +26,34 @@ class FakeAlertPort:
 
 
 class FakeMarketRepo:
-    def get_active_watched(self):
-        raise NotImplementedError
+    def __init__(self):
+        self._markets: list[dict] = []
+
+    def get_watched(self) -> list[dict]:
+        return list(self._markets)
+
+    def add(self, market: dict) -> None:
+        self._markets.append(market)
+
+    def remove(self, market_id: str) -> None:
+        self._markets = [m for m in self._markets if m.get("id") != market_id]
 
 
 class FakeWalletRepo:
-    def get(self, address: str):
-        raise NotImplementedError
+    def __init__(self):
+        self._wallets: dict[str, WalletProfile] = {}
 
-    def save(self, wallet) -> None:
-        raise NotImplementedError
+    def get(self, address: str) -> WalletProfile | None:
+        return self._wallets.get(address)
+
+    def save(self, wallet: WalletProfile) -> None:
+        pass
+
+
+assert isinstance(FakePolymarketPort(), PolymarketPort)
+assert isinstance(FakeAlertPort(), AlertPort)
+assert isinstance(FakeMarketRepo(), MarketRepo)
+assert isinstance(FakeWalletRepo(), WalletRepo)
 
 
 @pytest.fixture
