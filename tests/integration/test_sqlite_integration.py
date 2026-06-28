@@ -1,12 +1,11 @@
 """실제 SQLite DB와 애플리케이션 서비스 통합 테스트"""
 import sqlite3
-import pytest
 
 from src.application.market_scan import MarketScanService
 from src.application.position_monitor import PositionMonitor
-from src.infrastructure.sqlite_repos import SQLiteMarketRepo, SQLiteWalletRepo
 from src.domain.signal_detector import Position
-from tests.integration.test_position_monitor import FakePolymarketPort, FakeAlertPort
+from src.infrastructure.sqlite_repos import SQLiteMarketRepo, SQLiteWalletRepo
+from tests.integration.test_position_monitor import FakeAlertPort, FakePolymarketPort
 
 
 def test_sqlite_integration_flow():
