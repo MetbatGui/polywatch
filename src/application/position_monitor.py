@@ -93,46 +93,52 @@ class PositionMonitor:
         pos_signals = [s for s in signals if s.type != SignalType.PRICE_SPIKE]
 
         question = market["question"]
-        parts: list[str] = []
+        sep = "━" * 28
 
-        # header
         if price_spikes:
-            parts.append(f"⚡ <b>PRICE SPIKE</b>\n📍 {question}\n💹 yes → <b>{yes_price:.3f}</b>")
-        else:
-            signal_type = pos_signals[0].type.name if pos_signals else ""
-            icon = "🎯" if any(
-                self._classify_wallet(s.wallet) == Classification.INSIDER
-                for s in pos_signals[:1]
-            ) else "📊"
-            parts.append(f"{icon} <b>{question}</b>\n💲 yes = <b>{yes_price:.3f}</b>")
-            if signal_type:
-                parts.append(f"📌 {signal_type}")
+            return (
+                f"⚡ <b>PRICE SPIKE</b>\n"
+                f"{sep}\n"
+                f"<b>{question}</b>\n"
+                f"💹 yes → <b>{yes_price:.3f}</b>"
+            )
 
-        if pos_signals:
-            labeled: list[tuple[Signal, Classification]] = []
-            for sig in pos_signals:
-                label = self._classify_wallet(sig.wallet)
-                if label == Classification.INSIDER or self._explore:
-                    labeled.append((sig, label))
+        if not pos_signals:
+            return ""
 
-            top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
+        labeled: list[tuple[Signal, Classification]] = []
+        for sig in pos_signals:
+            label = self._classify_wallet(sig.wallet)
+            if label == Classification.INSIDER or self._explore:
+                labeled.append((sig, label))
 
-            if top:
-                # monospace table
-                rows = ["순위  유저              방향  금액          비중  가입"]
-                rows.append("─" * 58)
-                for i, (sig, label) in enumerate(top, 1):
-                    pos = curr_positions.get(sig.wallet)
-                    name = (pos.name or sig.wallet[:12]) if pos else sig.wallet[:12]
-                    share = (sig.current_value / total_value * 100) if total_value else 0
-                    created = self._created_date(sig.wallet)
-                    emoji = _LABEL_EMOJI.get(label.name, "❓")
-                    rows.append(
-                        f"{emoji}{i}  {name:<16}  {sig.outcome:<3}  "
-                        f"${sig.current_value:>10,.0f}  {share:>3.0f}%  {created}"
-                    )
-                parts.append("<pre>" + "\n".join(rows) + "</pre>")
+        top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
+        if not top:
+            return ""
 
-        if parts:
-            return "\n".join(parts)
-        return ""
+        has_insider = any(l == Classification.INSIDER for _, l in top)
+        header_icon = "🚨" if has_insider else "📊"
+        sig_type = pos_signals[0].type.name.replace("_", " ")
+
+        lines = [
+            f"{header_icon} <b>{question}</b>",
+            f"{sep}",
+            f"💲 yes = <b>{yes_price:.3f}</b>  ·  <i>{sig_type}</i>",
+            "",
+        ]
+
+        rank_emoji = ["1️⃣", "2️⃣", "3️⃣"]
+        for i, (sig, label) in enumerate(top):
+            pos = curr_positions.get(sig.wallet)
+            name = (pos.name or sig.wallet[:14]) if pos else sig.wallet[:14]
+            share = (sig.current_value / total_value * 100) if total_value else 0
+            created = self._created_date(sig.wallet)
+            tag = _LABEL_EMOJI.get(label.name, "❓")
+            outcome_icon = "🟢" if sig.outcome == "Yes" else "🔴"
+            lines += [
+                f"{rank_emoji[i]} {tag} <b>{name}</b>  {outcome_icon} {sig.outcome}",
+                f"   💵 <b>${sig.current_value:,.0f}</b>  ·  {share:.0f}%  ·  📅 {created}",
+                "",
+            ]
+
+        return "\n".join(lines).rstrip()
