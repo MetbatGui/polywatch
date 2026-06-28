@@ -1,5 +1,5 @@
 Set WshShell = CreateObject("WScript.Shell")
-projDir = "C:\Users\Zeya\Develop\Projects\test-polymarket"
+projDir = "C:\Users\Zeya\Develop\Projects\polywatch"
 uvExe = "C:\Users\Zeya\.local\bin\uv.exe"
 
 Do
