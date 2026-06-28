@@ -66,3 +66,21 @@ def test_fetch_wallet_history_returns_list(mocker):
     history = PolymarketAdapter().fetch_wallet_history("0xwallet")
     assert isinstance(history, list)
     assert history[0]["type"] == "BUY"
+
+
+def test_fetch_active_markets_broken_outcome_prices(mocker):
+    """outcomePrices가 깨진 포맷일 경우 yes_price가 0.0으로 복구되는지 검증"""
+    _mock_get(mocker, [
+        {"conditionId": "0xabc", "question": "Will X?",
+         "outcomePrices": "invalid-json", "active": True, "closed": False},
+        {"conditionId": "0xdef", "question": "Will Y?",
+         "outcomePrices": [], "active": True, "closed": False},
+        {"conditionId": "0xghi", "question": "Will Z?",
+         "outcomePrices": None, "active": True, "closed": False},
+    ])
+    markets = PolymarketAdapter().fetch_active_markets()
+    assert len(markets) == 3
+    assert markets[0]["yes_price"] == pytest.approx(0.0)
+    assert markets[1]["yes_price"] == pytest.approx(0.0)
+    assert markets[2]["yes_price"] == pytest.approx(0.0)
+

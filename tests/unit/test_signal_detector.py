@@ -1,7 +1,6 @@
 """SignalDetector Domain Service 단위 테스트"""
-import pytest
 
-from src.domain.signal_detector import SignalDetector, SignalConfig, SignalType, Position
+from src.domain.signal_detector import Position, SignalConfig, SignalDetector, SignalType
 
 PositionSnapshot = Position  # alias for readability in tests
 

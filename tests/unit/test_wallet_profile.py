@@ -1,5 +1,5 @@
 """WalletProfile VO + Classification 단위 테스트"""
-from src.domain.wallet import WalletProfile, Classification
+from src.domain.wallet import Classification, WalletProfile
 
 
 def test_wallet_profile_fields():

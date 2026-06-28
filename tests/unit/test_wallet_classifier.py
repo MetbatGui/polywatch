@@ -107,3 +107,19 @@ def test_classify_gambler():
 def test_classify_unknown():
     p = _profile()
     assert WalletClassifier.classify(p) == Classification.UNKNOWN
+
+
+def test_classify_invalid_boundary_values():
+    """음수 또는 비정상 데이터 입력 시 UNKNOWN으로 분류되어야 함"""
+    # 음수 age_days
+    p1 = _profile(age_days=-10, n_markets=1, total_trades=2)
+    # 음수 win_rate
+    p2 = _profile(win_rate=-0.5, total_trades=120, total_pnl=-15_000.0)
+    # 1.0 초과 win_rate
+    p3 = _profile(win_rate=1.5, age_days=100, n_markets=10, total_trades=30)
+    
+    classify = WalletClassifier.classify
+    assert classify(p1) == Classification.UNKNOWN
+    assert classify(p2) == Classification.UNKNOWN
+    assert classify(p3) == Classification.UNKNOWN
+
