@@ -77,6 +77,7 @@ def test_fetch_active_markets_broken_outcome_prices(mocker):
     ])
     markets = PolymarketAdapter().fetch_active_markets()
     assert len(markets) == 3
-    # 의도적인 실패 유도 (Red state): 999.0이 되도록 설정
-    assert markets[0]["yes_price"] == 999.0
+    assert markets[0]["yes_price"] == pytest.approx(0.0)
+    assert markets[1]["yes_price"] == pytest.approx(0.0)
+    assert markets[2]["yes_price"] == pytest.approx(0.0)
 
