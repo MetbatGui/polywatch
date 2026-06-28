@@ -3,12 +3,16 @@ import logging
 import sqlite3
 import time
 
+from dotenv import load_dotenv
+
 from src.application.market_scan import MarketScanService
 from src.application.position_monitor import PositionMonitor
 from src.config import Config
 from src.infrastructure.polymarket_adapter import PolymarketAdapter
 from src.infrastructure.sqlite_repos import SQLiteMarketRepo, SQLiteWalletRepo
 from src.infrastructure.telegram_adapter import TelegramAdapter
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)

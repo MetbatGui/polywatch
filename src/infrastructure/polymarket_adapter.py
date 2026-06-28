@@ -49,7 +49,7 @@ class PolymarketAdapter:
     def _map_market(m: dict) -> dict:
         prices_raw = m.get("outcomePrices", '["0","1"]')
         try:
-            prices = json.loads(prices_raw)
+            prices = prices_raw if isinstance(prices_raw, list) else json.loads(prices_raw)
             yes_price = float(prices[0])
         except (json.JSONDecodeError, IndexError, TypeError, ValueError):
             yes_price = 0.0

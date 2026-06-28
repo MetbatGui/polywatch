@@ -27,6 +27,16 @@ def test_fetch_active_markets_maps_fields(mocker):
     assert m["closed"] is False
 
 
+def test_fetch_active_markets_outcome_prices_as_list(mocker):
+    """API가 outcomePrices를 이미 list로 반환하는 경우"""
+    _mock_get(mocker, [
+        {"conditionId": "0xabc", "question": "Will X?",
+         "outcomePrices": ["0.35", "0.65"], "active": True, "closed": False},
+    ])
+    markets = PolymarketAdapter().fetch_active_markets()
+    assert markets[0]["yes_price"] == pytest.approx(0.35)
+
+
 def test_fetch_positions_maps_to_position_objects(mocker):
     _mock_get(mocker, [
         {"positions": [
