@@ -9,3 +9,8 @@ uv.lock
 # 런타임 데이터
 logs/
 cache/
+
+# CodeGraph & Cursor
+.codegraph/
+.cursor/
+
