@@ -2,6 +2,7 @@ from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletR
 from src.domain.signal_detector import SignalConfig, SignalDetector, SignalType
 from src.domain.wallet import Classification
 from src.domain.wallet_classifier import WalletClassifier
+from src.domain.wallet_profiler import WalletProfiler
 
 
 class PositionMonitor:
@@ -12,12 +13,14 @@ class PositionMonitor:
         market_repo: MarketRepo,
         wallet_repo: WalletRepo,
         config: SignalConfig = SignalConfig(),
+        explore: bool = True,
     ) -> None:
         self._poly = polymarket
         self._alert = alert
         self._markets = market_repo
         self._wallets = wallet_repo
         self._config = config
+        self._explore = explore
         # market_id → {wallet → Position}
         self._prev_snapshots: dict[str, dict] = {}
         self._prev_prices: dict[str, float] = {}
@@ -45,15 +48,24 @@ class PositionMonitor:
                         f"[PRICE_SPIKE] {market['question']} | yes={signal.yes_price:.2f}"
                     )
                 else:
-                    profile = self._wallets.get(signal.wallet)
-                    if profile is None:
-                        continue
-                    if WalletClassifier.classify(profile) == Classification.INSIDER:
-                        self._alert.send(
-                            f"[{signal.type.name}] wallet={signal.wallet}"
-                            f" outcome={signal.outcome} val={signal.current_value:.0f}"
-                            f" price={signal.avg_price:.2f}"
-                        )
+                    self._handle_position_signal(signal, market)
 
             self._prev_snapshots[market_id] = curr
             self._prev_prices[market_id] = yes_price
+
+    def _handle_position_signal(self, signal, market: dict) -> None:
+        profile = self._wallets.get(signal.wallet)
+
+        if profile is None:
+            history = self._poly.fetch_wallet_history(signal.wallet)
+            profile = WalletProfiler.from_history(history)
+            self._wallets.save(profile, signal.wallet)
+
+        label = WalletClassifier.classify(profile).name
+        if label == Classification.INSIDER.name or self._explore:
+            self._alert.send(
+                f"[{signal.type.name}|{label}] wallet={signal.wallet}"
+                f" outcome={signal.outcome} val={signal.current_value:.0f}"
+                f" price={signal.avg_price:.2f}"
+                f" | {market['question']}"
+            )
