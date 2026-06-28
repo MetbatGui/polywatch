@@ -1,0 +1,57 @@
+"""PolymarketAdapter 단위 테스트 — requests 모킹"""
+import pytest
+
+from src.infrastructure.polymarket_adapter import PolymarketAdapter
+
+
+def _mock_get(mocker, payload):
+    resp = mocker.Mock()
+    resp.json.return_value = payload
+    resp.raise_for_status = mocker.Mock()
+    mocker.patch("requests.get", return_value=resp)
+    return resp
+
+
+def test_fetch_active_markets_maps_fields(mocker):
+    _mock_get(mocker, [
+        {"conditionId": "0xabc", "question": "Will X happen?",
+         "outcomePrices": '["0.45","0.55"]', "active": True, "closed": False},
+    ])
+    markets = PolymarketAdapter().fetch_active_markets()
+    assert len(markets) == 1
+    m = markets[0]
+    assert m["id"] == "0xabc"
+    assert m["question"] == "Will X happen?"
+    assert m["yes_price"] == pytest.approx(0.45)
+    assert m["active"] is True
+    assert m["closed"] is False
+
+
+def test_fetch_positions_maps_to_position_objects(mocker):
+    _mock_get(mocker, [
+        {"positions": [
+            {"proxyWallet": "0xwallet", "outcome": "Yes",
+             "avgPrice": 0.42, "currentValue": 2500.0},
+        ]}
+    ])
+    from src.domain.signal_detector import Position
+    positions = PolymarketAdapter().fetch_positions("0xabc")
+    assert len(positions) == 1
+    p = positions[0]
+    assert isinstance(p, Position)
+    assert p.wallet == "0xwallet"
+    assert p.outcome == "Yes"
+    assert p.avg_price == pytest.approx(0.42)
+    assert p.current_value == pytest.approx(2500.0)
+
+
+def test_fetch_positions_empty_response(mocker):
+    _mock_get(mocker, [])
+    assert PolymarketAdapter().fetch_positions("0xnone") == []
+
+
+def test_fetch_wallet_history_returns_list(mocker):
+    _mock_get(mocker, [{"type": "BUY", "amount": 1000}])
+    history = PolymarketAdapter().fetch_wallet_history("0xwallet")
+    assert isinstance(history, list)
+    assert history[0]["type"] == "BUY"
