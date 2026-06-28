@@ -148,6 +148,24 @@ def test_new_macro_market_added_to_watchlist():
     assert watched[0]["id"] == "mkt-new"
 
 
+def test_unknown_wallet_large_position_triggers_alert_in_explore_mode(alert_port):
+    """탐색 모드: 미지 지갑 대형 포지션 → UNKNOWN 레이블로 알림"""
+    wallet_addr = "0xbrand_new"
+    poly = FakePolymarketPort()
+    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 3_000.0)]
+    # no wallet history → profile defaults to UNKNOWN
+
+    market_repo = FakeMarketRepo()
+    market_repo.add(_MACRO_MARKET)
+
+    monitor = PositionMonitor(poly, alert_port, market_repo, FakeWalletRepo(), explore=True)
+    monitor.run_once()
+
+    assert len(alert_port.sent) == 1
+    assert wallet_addr in alert_port.sent[0]
+    assert "UNKNOWN" in alert_port.sent[0]
+
+
 def test_expired_market_removed_from_watchlist():
     """마감된 마켓 → watched_markets 제거"""
     poly = FakePolymarketPort()
