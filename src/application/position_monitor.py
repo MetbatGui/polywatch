@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from src.application.ports import AlertPort, MarketRepo, PolymarketPort, WalletRepo
 from src.domain.signal_detector import Signal, SignalConfig, SignalDetector, SignalType
-from src.domain.wallet import Classification
+from src.domain.wallet import Classification, WalletProfile
 from src.domain.wallet_classifier import WalletClassifier
 from src.domain.wallet_profiler import WalletProfiler
 
@@ -89,8 +89,8 @@ class PositionMonitor:
             return True
         return sig.current_value >= self._whale_min_usd
 
-    def _resolve_wallet(self, address: str) -> tuple[Classification, int]:
-        """Returns (classification, active_bets_count)."""
+    def _resolve_wallet(self, address: str) -> tuple[Classification, WalletProfile]:
+        """Returns (classification, profile)."""
         profile = self._wallets.get(address)
         if profile is None:
             history = self._poly.fetch_wallet_history(address)
@@ -98,7 +98,7 @@ class PositionMonitor:
             age = self._fetch_age_days(address)
             profile = dataclasses.replace(profile, age_days=age)
             self._wallets.save(profile, address)
-        return WalletClassifier.classify(profile), profile.n_markets
+        return WalletClassifier.classify(profile), profile
 
     def _fetch_age_days(self, address: str) -> int:
         if address not in self._created_cache:
@@ -135,11 +135,11 @@ class PositionMonitor:
         if not pos_signals:
             return ""
 
-        labeled: list[tuple[Signal, Classification, int]] = []
+        labeled: list[tuple[Signal, Classification, WalletProfile]] = []
         for sig in pos_signals:
-            label, n_bets = self._resolve_wallet(sig.wallet)
+            label, profile = self._resolve_wallet(sig.wallet)
             if self._is_notable(sig, label):
-                labeled.append((sig, label, n_bets))
+                labeled.append((sig, label, profile))
 
         top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
         if not top:
@@ -149,26 +149,31 @@ class PositionMonitor:
         header_icon = "🚨" if has_insider else "📊"
         sig_type = pos_signals[0].type.name.replace("_", " ")
 
-        rows = [_TABLE_HDR, _TABLE_SEP]
-        for i, (sig, label, n_bets) in enumerate(top):
-            pos = curr_positions.get(sig.wallet)
-            raw_name = (pos.name or sig.wallet[:14]) if pos else sig.wallet[:14]
-            name = raw_name[:14].ljust(14)
-            type_code = _LABEL_CODE.get(label.name, "???")
-            side = sig.outcome[:3].ljust(3)
-            usd = f"${sig.current_value:,.0f}".rjust(8)
-            share = (sig.current_value / total_value * 100) if total_value else 0
-            shr = f"{share:.0f}%".rjust(4)
-            bets = str(n_bets).rjust(4)
-            age_days = self._fetch_age_days(sig.wallet)
-            age = ("?" if age_days == 9999 else f"{age_days}d").rjust(5)
-            rows.append(
-                f"{i + 1:<2}  {type_code:<3}  {name}  {side}  {usd}  {shr}  {bets}  {age}"
-            )
+        rank_emoji = ["1️⃣", "2️⃣", "3️⃣"]
+        sep = "━" * 28
+        lines = [
+            f"{header_icon} <b>{question}</b>",
+            f"💲 yes <b>{yes_price:.3f}</b>  ·  <i>{sig_type}</i>",
+            sep,
+        ]
 
-        table = "\n".join(rows)
-        return (
-            f"{header_icon} <b>{question}</b>\n"
-            f"💲 yes <b>{yes_price:.3f}</b>  ·  <i>{sig_type}</i>\n\n"
-            f"<pre>{table}</pre>"
-        )
+        for i, (sig, label, profile) in enumerate(top):
+            pos = curr_positions.get(sig.wallet)
+            name = (pos.name or sig.wallet[:16]) if pos else sig.wallet[:16]
+            share = (sig.current_value / total_value * 100) if total_value else 0
+            age_days = self._fetch_age_days(sig.wallet)
+            age = "?" if age_days == 9999 else f"{age_days}d"
+            tag = _LABEL_EMOJI.get(label.name, "❓")
+            type_code = _LABEL_CODE.get(label.name, "???")
+            outcome_icon = "🟢" if sig.outcome == "Yes" else "🔴"
+            lines += [
+                f"{rank_emoji[i]} {tag} <b>{name}</b>  [{type_code}]",
+                f"   포지션  {outcome_icon} {sig.outcome}"
+                f"  <b>${sig.current_value:,.0f}</b> ({share:.0f}%)",
+                f"   승률     {profile.win_rate * 100:.0f}%",
+                f"   거래기록  {profile.n_markets}건",
+                f"   생성일   {age}",
+                "",
+            ]
+
+        return "\n".join(lines).rstrip()
