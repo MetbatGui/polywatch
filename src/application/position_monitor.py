@@ -30,6 +30,7 @@ class PositionMonitor:
         self._prev_snapshots: dict[str, dict] = {}
         self._prev_prices: dict[str, float] = {}
         self._created_cache: dict[str, int] = {}
+        self._warmed_up: set[str] = set()
 
     def run_once(self) -> None:
         for market in self._markets.get_watched():
@@ -38,6 +39,13 @@ class PositionMonitor:
 
             positions = self._poly.fetch_positions(market_id)
             curr = {p.wallet: p for p in positions}
+
+            if market_id not in self._warmed_up:
+                self._warmed_up.add(market_id)
+                self._prev_snapshots[market_id] = curr
+                self._prev_prices[market_id] = yes_price
+                continue
+
             prev = self._prev_snapshots.get(market_id, {})
             prev_price = self._prev_prices.get(market_id)
 

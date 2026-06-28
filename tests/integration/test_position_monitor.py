@@ -83,7 +83,7 @@ def test_insider_position_triggers_alert(alert_port):
     """인사이더 프로필 지갑의 신규 포지션 → TG 알림 발송"""
     wallet_addr = "0xinside"
     poly = FakePolymarketPort()
-    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 2_000.0)]
+    poly._positions["mkt1"] = []  # warmup: 빈 상태
 
     wallet_repo = FakeWalletRepo()
     wallet_repo._wallets[wallet_addr] = _INSIDER_PROFILE
@@ -92,7 +92,11 @@ def test_insider_position_triggers_alert(alert_port):
     market_repo.add(_MACRO_MARKET)
 
     monitor = PositionMonitor(poly, alert_port, market_repo, wallet_repo)
-    monitor.run_once()
+    monitor.run_once()  # warmup tick — 알림 없음
+    assert alert_port.sent == []
+
+    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 2_000.0)]
+    monitor.run_once()  # 신규 진입 감지
 
     assert len(alert_port.sent) == 1
     assert wallet_addr in alert_port.sent[0]
@@ -155,14 +159,18 @@ def test_whale_unknown_triggers_alert(alert_port):
     """고래 미지 지갑 (>= whale_min_usd) → 알림"""
     wallet_addr = "0xwhale_new"
     poly = FakePolymarketPort()
-    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 60_000.0)]
+    poly._positions["mkt1"] = []  # warmup: 빈 상태
 
     market_repo = FakeMarketRepo()
     market_repo.add(_MACRO_MARKET)
 
     monitor = PositionMonitor(poly, alert_port, market_repo, FakeWalletRepo(),
                               whale_min_usd=50_000.0)
-    monitor.run_once()
+    monitor.run_once()  # warmup tick
+    assert alert_port.sent == []
+
+    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 60_000.0)]
+    monitor.run_once()  # 신규 진입 감지
 
     assert len(alert_port.sent) == 1
     assert wallet_addr[:10] in alert_port.sent[0]
