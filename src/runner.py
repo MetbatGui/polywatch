@@ -14,7 +14,14 @@ from src.infrastructure.telegram_adapter import TelegramAdapter
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler("logs/polywatch.log", encoding="utf-8"),
+        logging.StreamHandler(),
+    ],
+)
 log = logging.getLogger(__name__)
 
 

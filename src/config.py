@@ -23,7 +23,7 @@ class Config:
         return cls(
             telegram_token=require("TG_TOKEN"),
             telegram_chat_id=require("TG_CHAT"),
-            db_path=os.environ.get("DB_PATH", "polywatch.db"),
+            db_path=os.environ.get("DB_PATH", "cache/polywatch.db"),
             scan_interval_sec=int(os.environ.get("SCAN_INTERVAL_SEC", "3600")),
             monitor_interval_sec=int(os.environ.get("MONITOR_INTERVAL_SEC", "300")),
             whale_min_usd=float(os.environ.get("WHALE_MIN_USD", "50000")),
