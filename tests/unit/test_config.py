@@ -13,6 +13,7 @@ def test_config_from_env(monkeypatch):
     assert cfg.db_path == "polywatch.db"
     assert cfg.scan_interval_sec == 3600
     assert cfg.monitor_interval_sec == 300
+    assert cfg.whale_min_usd == 50_000.0
 
 
 def test_config_custom_intervals(monkeypatch):

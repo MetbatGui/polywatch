@@ -30,7 +30,8 @@ def run(cfg: Config) -> None:
     alert = TelegramAdapter(token=cfg.telegram_token, chat_id=cfg.telegram_chat_id)
 
     scanner = MarketScanService(poly, market_repo)
-    monitor = PositionMonitor(poly, alert, market_repo, wallet_repo)
+    monitor = PositionMonitor(poly, alert, market_repo, wallet_repo,
+                              whale_min_usd=cfg.whale_min_usd)
 
     last_scan = 0.0
 

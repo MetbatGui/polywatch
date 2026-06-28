@@ -25,17 +25,16 @@ class PositionMonitor:
         market_repo: MarketRepo,
         wallet_repo: WalletRepo,
         config: SignalConfig = SignalConfig(),
-        explore: bool = True,
+        whale_min_usd: float = 50_000.0,
     ) -> None:
         self._poly = polymarket
         self._alert = alert
         self._markets = market_repo
         self._wallets = wallet_repo
         self._config = config
-        self._explore = explore
+        self._whale_min_usd = whale_min_usd
         self._prev_snapshots: dict[str, dict] = {}
         self._prev_prices: dict[str, float] = {}
-        # cache: wallet → created_at epoch
         self._created_cache: dict[str, int] = {}
 
     def run_once(self) -> None:
@@ -63,6 +62,15 @@ class PositionMonitor:
 
             self._prev_snapshots[market_id] = curr
             self._prev_prices[market_id] = yes_price
+
+    def _is_notable(self, sig: Signal, label: Classification) -> bool:
+        if label == Classification.INSIDER:
+            return True
+        if label in (Classification.GAMBLER, Classification.AMM_BOT):
+            return False
+        if sig.type == SignalType.POSITION_INCREASE:
+            return True
+        return sig.current_value >= self._whale_min_usd
 
     def _classify_wallet(self, address: str) -> Classification:
         profile = self._wallets.get(address)
@@ -109,14 +117,14 @@ class PositionMonitor:
         labeled: list[tuple[Signal, Classification]] = []
         for sig in pos_signals:
             label = self._classify_wallet(sig.wallet)
-            if label == Classification.INSIDER or self._explore:
+            if self._is_notable(sig, label):
                 labeled.append((sig, label))
 
         top = sorted(labeled, key=lambda x: -x[0].current_value)[:_TOP_N]
         if not top:
             return ""
 
-        has_insider = any(l == Classification.INSIDER for _, l in top)
+        has_insider = any(lbl == Classification.INSIDER for _, lbl in top)
         header_icon = "🚨" if has_insider else "📊"
         sig_type = pos_signals[0].type.name.replace("_", " ")
 

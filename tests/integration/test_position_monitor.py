@@ -151,22 +151,37 @@ def test_new_macro_market_added_to_watchlist():
     assert watched[0]["id"] == "mkt-new"
 
 
-def test_unknown_wallet_large_position_triggers_alert_in_explore_mode(alert_port):
-    """탐색 모드: 미지 지갑 대형 포지션 → UNKNOWN 레이블로 알림"""
-    wallet_addr = "0xbrand_new"
+def test_whale_unknown_triggers_alert(alert_port):
+    """고래 미지 지갑 (>= whale_min_usd) → 알림"""
+    wallet_addr = "0xwhale_new"
     poly = FakePolymarketPort()
-    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 3_000.0)]
-    # no wallet history → profile defaults to UNKNOWN
+    poly._positions["mkt1"] = [Position(wallet_addr, "Yes", 0.45, 60_000.0)]
 
     market_repo = FakeMarketRepo()
     market_repo.add(_MACRO_MARKET)
 
-    monitor = PositionMonitor(poly, alert_port, market_repo, FakeWalletRepo(), explore=True)
+    monitor = PositionMonitor(poly, alert_port, market_repo, FakeWalletRepo(),
+                              whale_min_usd=50_000.0)
     monitor.run_once()
 
     assert len(alert_port.sent) == 1
-    assert wallet_addr[:10] in alert_port.sent[0]  # name fallback truncates to 12 chars
-    assert "❓" in alert_port.sent[0]  # UNKNOWN emoji
+    assert wallet_addr[:10] in alert_port.sent[0]
+    assert "❓" in alert_port.sent[0]
+
+
+def test_small_unknown_no_alert(alert_port):
+    """소액 미지 지갑 → 알림 없음"""
+    poly = FakePolymarketPort()
+    poly._positions["mkt1"] = [Position("0xsmall", "Yes", 0.45, 3_000.0)]
+
+    market_repo = FakeMarketRepo()
+    market_repo.add(_MACRO_MARKET)
+
+    monitor = PositionMonitor(poly, alert_port, market_repo, FakeWalletRepo(),
+                              whale_min_usd=50_000.0)
+    monitor.run_once()
+
+    assert alert_port.sent == []
 
 
 def test_expired_market_removed_from_watchlist():
