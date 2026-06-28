@@ -7,7 +7,7 @@ _MACRO_INCLUDE = frozenset({
     "iran", "russia", "china", "taiwan", "ukraine", "israel",
     "trump", "biden", "harris", "macron", "modi", "erdogan",
     "zelensky", "zelenskyy", "canal", "gulf", "geopolit",
-    "referendum", "vote", "ballot", "primary", "runoff",
+    "referendum", " vote ", "ballot", "primary", "runoff",
     "nominee", "leadership", "cabinet", "ceasefire", "treaty",
 })
 

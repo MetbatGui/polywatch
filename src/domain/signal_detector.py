@@ -1,12 +1,19 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
 
 
 class SignalType(Enum):
     NEW_POSITION = auto()
     POSITION_INCREASE = auto()
     PRICE_SPIKE = auto()
+
+
+@dataclass(frozen=True)
+class Position:
+    wallet: str
+    outcome: str
+    avg_price: float
+    current_value: float
 
 
 @dataclass(frozen=True)
@@ -32,8 +39,8 @@ class Signal:
 class SignalDetector:
     @staticmethod
     def detect(
-        prev: dict[str, Any],
-        curr: dict[str, Any],
+        prev: dict[str, Position],
+        curr: dict[str, Position],
         yes_price: float = 0.0,
         prev_yes_price: float | None = None,
         config: SignalConfig = SignalConfig(),
@@ -60,7 +67,8 @@ class SignalDetector:
 
             prev_pos = prev.get(wallet)
 
-            if prev_pos is None:
+            # prev_val=0 → 실질적 신규 진입으로 처리
+            if prev_pos is None or prev_pos.current_value <= 0:
                 signals.append(Signal(
                     type=SignalType.NEW_POSITION,
                     wallet=wallet, outcome=outcome,

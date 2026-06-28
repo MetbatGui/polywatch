@@ -1,17 +1,9 @@
 """SignalDetector Domain Service 단위 테스트"""
-from dataclasses import dataclass
-
 import pytest
 
-from src.domain.signal_detector import SignalDetector, SignalConfig, SignalType
+from src.domain.signal_detector import SignalDetector, SignalConfig, SignalType, Position
 
-
-@dataclass(frozen=True)
-class PositionSnapshot:
-    wallet: str
-    outcome: str
-    avg_price: float
-    current_value: float
+PositionSnapshot = Position  # alias for readability in tests
 
 
 DEFAULT_CONFIG = SignalConfig(
