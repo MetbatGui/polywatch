@@ -18,6 +18,21 @@ _LABEL_EMOJI = {
     "ARBITRAGER": "⚡",
 }
 
+_LABEL_CODE = {
+    "INSIDER":    "INS",
+    "EXPERT":     "EXP",
+    "UNKNOWN":    "???",
+    "GAMBLER":    "GAM",
+    "AMM_BOT":    "BOT",
+    "ARBITRAGER": "ARB",
+}
+
+_TABLE_HDR = (
+    f"{'#':<2}  {'TYPE':<3}  {'NAME':<14}  {'SIDE':<3}"
+    f"  {'$USD':>8}  {'SHR':>4}  {'BETS':>4}  {'AGE':>5}"
+)
+_TABLE_SEP = "─" * len(_TABLE_HDR)
+
 
 class PositionMonitor:
     def __init__(
@@ -110,13 +125,10 @@ class PositionMonitor:
         pos_signals = [s for s in signals if s.type != SignalType.PRICE_SPIKE]
 
         question = market["question"]
-        sep = "━" * 28
 
         if price_spikes:
             return (
-                f"⚡ <b>PRICE SPIKE</b>\n"
-                f"{sep}\n"
-                f"<b>{question}</b>\n"
+                f"⚡ <b>PRICE SPIKE</b>  <b>{question}</b>\n"
                 f"💹 yes → <b>{yes_price:.3f}</b>"
             )
 
@@ -137,26 +149,26 @@ class PositionMonitor:
         header_icon = "🚨" if has_insider else "📊"
         sig_type = pos_signals[0].type.name.replace("_", " ")
 
-        lines = [
-            f"{header_icon} <b>{question}</b>",
-            f"{sep}",
-            f"💲 yes = <b>{yes_price:.3f}</b>  ·  <i>{sig_type}</i>",
-            "",
-        ]
-
-        rank_emoji = ["1️⃣", "2️⃣", "3️⃣"]
+        rows = [_TABLE_HDR, _TABLE_SEP]
         for i, (sig, label, n_bets) in enumerate(top):
             pos = curr_positions.get(sig.wallet)
-            name = (pos.name or sig.wallet[:14]) if pos else sig.wallet[:14]
+            raw_name = (pos.name or sig.wallet[:14]) if pos else sig.wallet[:14]
+            name = raw_name[:14].ljust(14)
+            type_code = _LABEL_CODE.get(label.name, "???")
+            side = sig.outcome[:3].ljust(3)
+            usd = f"${sig.current_value:,.0f}".rjust(8)
             share = (sig.current_value / total_value * 100) if total_value else 0
-            age = self._age_days(sig.wallet)
-            tag = _LABEL_EMOJI.get(label.name, "❓")
-            outcome_icon = "🟢" if sig.outcome == "Yes" else "🔴"
-            lines += [
-                f"{rank_emoji[i]} {tag} <b>{name}</b>  {outcome_icon} {sig.outcome}",
-                f"   💵 <b>${sig.current_value:,.0f}</b>  ·  {share:.0f}%"
-                f"  ·  🎰 {n_bets}건  ·  👤 {age}",
-                "",
-            ]
+            shr = f"{share:.0f}%".rjust(4)
+            bets = str(n_bets).rjust(4)
+            age_days = self._fetch_age_days(sig.wallet)
+            age = ("?" if age_days == 9999 else f"{age_days}d").rjust(5)
+            rows.append(
+                f"{i + 1:<2}  {type_code:<3}  {name}  {side}  {usd}  {shr}  {bets}  {age}"
+            )
 
-        return "\n".join(lines).rstrip()
+        table = "\n".join(rows)
+        return (
+            f"{header_icon} <b>{question}</b>\n"
+            f"💲 yes <b>{yes_price:.3f}</b>  ·  <i>{sig_type}</i>\n\n"
+            f"<pre>{table}</pre>"
+        )
