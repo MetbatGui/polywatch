@@ -10,3 +10,13 @@ market_results.json
 macro_markets.json
 macro_top.json
 insider_suspects.pkl
+prev_market_id.txt
+eda/data/snapshots_*.pkl
+eda/data/wallets.json
+eda/data/wallets.db
+eda/logs/
+.venv/
+uv.lock
+eda/
+scripts/
+scratch/
