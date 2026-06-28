@@ -164,15 +164,13 @@ class PositionMonitor:
             age_days = self._fetch_age_days(sig.wallet)
             age = "?" if age_days == 9999 else f"{age_days}d"
             tag = _LABEL_EMOJI.get(label.name, "❓")
-            type_code = _LABEL_CODE.get(label.name, "???")
             outcome_icon = "🟢" if sig.outcome == "Yes" else "🔴"
+            usd = f"${sig.current_value:,.0f}"
             lines += [
-                f"{rank_emoji[i]} {tag} <b>{name}</b>  [{type_code}]",
-                f"   포지션  {outcome_icon} {sig.outcome}"
-                f"  <b>${sig.current_value:,.0f}</b> ({share:.0f}%)",
-                f"   승률     {profile.win_rate * 100:.0f}%",
-                f"   거래기록  {profile.n_markets}건",
-                f"   생성일   {age}",
+                f"{rank_emoji[i]} {tag} <b>{name}</b>",
+                f"   {outcome_icon} {sig.outcome}  <b>{usd}</b>  ({share:.0f}%)",
+                f"   📈 승률 <b>{profile.win_rate * 100:.0f}%</b>  ·  🗂 {profile.n_markets}건",
+                f"   🕐 {age}",
                 "",
             ]
 

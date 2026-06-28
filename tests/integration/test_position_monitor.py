@@ -166,7 +166,7 @@ def test_whale_unknown_triggers_alert(alert_port):
 
     assert len(alert_port.sent) == 1
     assert wallet_addr[:10] in alert_port.sent[0]
-    assert "???" in alert_port.sent[0]
+    assert "❓" in alert_port.sent[0]
 
 
 def test_small_unknown_no_alert(alert_port):
